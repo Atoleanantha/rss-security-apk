@@ -10,8 +10,9 @@ class MongoDBHelper {
     // MongoDB connection URI (replace with your MongoDB connection string)
     print("db");
 
-   // var uri = 'mongodb+srv://vplsay:vplsay@vplay-db.llmdmshzabc.mongodb.net/?retryWrites=true&w=majority&appName=vPlay-db';
-    var uri = 'mongodb://localhost:27017/rsssecurity';
+   // var uri = 'mongodb+srv://vplay:vplay@vplay-db.llmdmshz.mongodb.net/?retryWrites=true&w=majority&appName=vPlay-db';
+   var uri = 'mongodb+srv://vplay:vplay@vplay-db.llmdmhz.mongodb.net/?retryWrites=true&w=majority&ssl=true&appName=vPlay-db';
+   //  var uri = 'mongodb://localhost:27017/rsssecurity';
 
     _db = await Db.create(uri);
     await _db.open();

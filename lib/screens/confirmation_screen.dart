@@ -13,21 +13,31 @@ class ConfirmationScreen extends StatefulWidget {
 
 class _ConfirmationScreenState extends State<ConfirmationScreen> {
   bool _isLoading = false;
+  bool _isUploaded = false;
+  late Map<String, dynamic> formData;
+
+  void _navigateToNext(){
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) =>  DetailsPage(data:formData)),
+    );
+  }
 
   Future<void> handleInsertToDB(BuildContext context) async {
     setState(() {
       _isLoading = true;
     });
     try {
-      // MongoDBHelper dbHelper = MongoDBHelper();
+      MongoDBHelper dbHelper = MongoDBHelper();
       // Check for internet and insert data
-      // await dbHelper.connectToMongo();
-      Map<String, dynamic> formData = {
+      await dbHelper.connectToMongo();
+       formData = {
         "fullName": widget.data['fullName'],
         "mobile": widget.data['mobile'],
         "email": widget.data['email'],
         "gender": widget.data['gender'],
         "idType": widget.data['idType'],
+        'id':widget.data['uploadedFile'],
         'company': widget.data['company'],
         'host': widget.data['host'],
         'vehicleNumber': widget.data['vehicleNumber'],
@@ -40,23 +50,24 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
       };
 
 
-      // bool result = await dbHelper.insertData(formData);
-      // await dbHelper.closeConnection();
+      bool result = await dbHelper.insertData(formData);
+      await dbHelper.closeConnection();
       await Future.delayed(const Duration(seconds: 1));
-      // if (!result) {
-      //   ScaffoldMessenger.of(context).showSnackBar(
-      //     const SnackBar(
-      //       content: Text(
-      //         "No internet connection or Something went wrong!. Please try again.",
-      //         style: TextStyle(color: Colors.red),
-      //       ),
-      //     ),
-      //   );
-      //   setState(() {
-      //     _isLoading = false;
-      //   });
-      //   return;
-      // }
+      if (!result) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              "No internet connection or Something went wrong!. Please try again.",
+              style: TextStyle(color: Colors.red),
+            ),
+          ),
+        );
+        setState(() {
+          _isLoading = false;
+        });
+        return;
+      }
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
@@ -67,14 +78,13 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
       );
       setState(() {
         _isLoading = false;
+        _isUploaded=true;
       });
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) =>  DetailsPage(data:formData)),
-      );
+
     } catch (e) {
       setState(() {
         _isLoading = false;
+        _isUploaded=false;
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -355,95 +365,105 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
                         ElevatedButton(
                           style: ElevatedButton.styleFrom(
                             backgroundColor:
-                                const Color.fromRGBO(237, 27, 36, 1),
+                                _isLoading? Colors.grey: const Color.fromRGBO(237, 27, 36, 1),
                             minimumSize: const Size(double.infinity, 50),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
                           onPressed: () {
-                            _isLoading
-                                ? const Center(
-                              child:  CircularProgressIndicator(
-                                color: Colors.grey,
-                              ),
-                            )
-                                :
-                            showDialog(
-                              context: context,
-                              builder: (context) => AlertDialog(
-                                content: const Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    CircleAvatar(
-                                      backgroundColor:
-                                          Color.fromRGBO(1, 192, 154, 1),
-                                      child: Icon(
-                                        Icons.done,
-                                        color: Colors.white,
+                            handleInsertToDB(context);
+
+                            setState(() {
+                              showDialog(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  content: const Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      CircleAvatar(
+                                        backgroundColor:
+                                        Color.fromRGBO(1, 192, 154, 1),
+                                        child: Icon(
+                                          Icons.done,
+                                          color: Colors.white,
+                                        ),
                                       ),
-                                    ),
-                                    SizedBox(height: 10),
-                                    Text(
-                                      "Registration Successfully Created",
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w700,
-                                        fontSize: 20,
-                                        color: Colors.black,
+                                      SizedBox(height: 10),
+                                      Text(
+                                        "Registration Successfully Created",
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 20,
+                                          color: Colors.black,
+                                        ),
+                                        textAlign: TextAlign.center,
                                       ),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                    SizedBox(height: 10),
-                                    Text(
-                                      "Thank you for filling this form. This may take a few moments.",
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w400,
-                                        fontSize: 14,
-                                        color: Colors.black,
+                                      SizedBox(height: 10),
+                                      Text(
+                                        "Thank you for filling this form. This may take a few moments.",
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w400,
+                                          fontSize: 14,
+                                          color: Colors.black,
+                                        ),
+                                        textAlign: TextAlign.center,
                                       ),
-                                      textAlign: TextAlign.center,
+                                    ],
+                                  ),
+                                  actions: [
+
+                                    // Show CircularProgressIndicator if loading
+                                     ElevatedButton(
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor:
+                                        const Color.fromRGBO(
+                                            237, 27, 36, 1),
+                                        minimumSize:
+                                        const Size(double.infinity, 50),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                          BorderRadius.circular(12),
+                                        ),
+                                      ),
+                                      onPressed: () {
+                                        // handleInsertToDB(context);
+                                        if (_isUploaded){
+                                          _navigateToNext();
+                                        }else{
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            const SnackBar(
+                                              content: Text(
+                                                "Registration failed.",
+                                                style: TextStyle(color: Colors.red),
+                                              ),
+                                            ),
+                                          );
+                                        }
+                                      },
+                                      child: const Text(
+                                        'Done',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 19,
+                                        ),
+                                      ),
                                     ),
                                   ],
                                 ),
-                                actions: [
-                                  // Show CircularProgressIndicator if loading
-                                  _isLoading
-                                      ? const Center(
-                                        child:  CircularProgressIndicator(
-                                            color: Colors.grey,
-                                          ),
-                                      )
-                                      : ElevatedButton(
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor:
-                                                const Color.fromRGBO(
-                                                    237, 27, 36, 1),
-                                            minimumSize:
-                                                const Size(double.infinity, 50),
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(12),
-                                            ),
-                                          ),
-                                          onPressed: () {
-                                            handleInsertToDB(context);
-                                          },
-                                          child: const Text(
-                                            'Done',
-                                            style: TextStyle(
-                                              color: Colors.white,
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 19,
-                                            ),
-                                          ),
-                                        ),
-                                ],
-                              ),
-                            );
+                              );
+                            });
+
+
                           },
-                          child: const Text(
+                          child: _isLoading? const Center(
+                            child:  CircularProgressIndicator(
+                              color: Colors.grey,
+                            ),
+                          ) : const Text(
                             'Submit',
                             style: TextStyle(
                               color: Colors.white,
